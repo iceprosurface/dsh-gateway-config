@@ -1,0 +1,21 @@
+{
+  "name": "gateway-config",
+  "version": "0.2.0",
+  "description": "DSH plugin for configuring any OpenAI-compatible LLM gateway (GET /models discovery) as a provider",
+  "private": true,
+  "type": "module",
+  "main": "lib/index.js",
+  "exports": {
+    ".": { "default": "./lib/index.js" },
+    "./client": { "default": "./lib/client.js" },
+    "./package.json": "./package.json"
+  },
+  "dsh": {
+    "client": {
+      "inject": ["@deepseek-ai/dsh-client-runtime", "@deepseek-ai/dsh-client-connection"],
+      "platform": "web"
+    }
+  },
+  "engines": { "node": ">=20" },
+  "license": "MIT"
+}

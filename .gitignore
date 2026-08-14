@@ -1,0 +1,25 @@
+# Secrets and local credentials
+.credentials.yaml
+.anonymous-user-id
+.env
+.env.*
+!.env.example
+
+# DSH runtime state
+sessions/
+storages/
+attachments/
+
+# Package manager and build output
+node_modules/
+.pnpm-store/
+dist/
+build/
+
+# Local/editor noise
+.DS_Store
+*.log
+settings.yaml
+
+# DSH profile tree (runtime, when this repo doubles as DSH_HOME)
+profiles/
