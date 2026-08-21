@@ -12,6 +12,10 @@ provider — one provider route per gateway, multiple gateways side by side.
 - Per-model reasoning-effort mappings
 - Per-model text/image input capability mappings
 - One managed credential per route (`<ROUTE>_API_KEY`, e.g. `CINDY_API_KEY`)
+- Native ChatGPT OAuth for the `openai-codex` provider, including automatic
+  access-token refresh through pi-ai
+- Localized settings UI in English and Simplified Chinese, following the DSH
+  interface locale
 
 Providers are fixed presets; no ad-hoc routes are created. Anything that
 speaks the OpenAI `GET /models` shape (the de-facto standard DSH discovery
@@ -25,6 +29,8 @@ reads) works:
 - Public vendors with OpenAI-compatible APIs carry their documented base
   URLs out of the box: `deepseek`, `moonshot` (Kimi), `zhipu` (GLM), `qwen`,
   `openrouter`, `siliconflow`, `xai` (Grok).
+- `openai-codex` (OpenAI Codex / ChatGPT) uses the native pi-ai provider and
+  OAuth transport. It does not require or accept a custom Base URL or API key.
 
 ## Install into an existing DSH profile
 
@@ -54,7 +60,7 @@ Then restart the existing DSH web process.
 
 ## Configure a gateway
 
-Open **LLM 网关配置**. Pick a gateway from the provider dropdown (Cindy, Sub2API, 通用, or a
+Open **LLM Gateway** / **LLM 网关配置**. Pick a gateway from the provider dropdown (Cindy, Sub2API, Generic, or a
 public vendor), fill in the Base URL if not pre-filled (the gateway's OpenAI-compatible root, e.g.
 ending in `/v1`), then click **拉取模型**: the chat-capable models are
 listed with checkboxes; tick the ones to keep and mark one radio button as
@@ -62,11 +68,20 @@ the default model, then click **写入配置**. The key is stored in DSH local
 managed credentials and never written to this repository. Later, leave the
 key blank; the plugin reuses `<ROUTE>_API_KEY`.
 
+For OpenAI Codex, select `openai-codex` and click **Sign in to ChatGPT**. The
+authorization page opens in a separate browser window. After the callback
+completes, DSH stores the grant as `llm-pi-ai/openai-codex`; tokens are never
+returned to the settings UI, and pi-ai refreshes them when needed. Then
+discover and import models as usual.
+
 The host-side equivalent:
 
 ```
-gateway_configure(apiKey, baseURL, route, displayName, defaultModel?)
+gateway_configure(apiKey?, baseURL?, route, displayName, defaultModel?)
 ```
+
+`apiKey` and `baseURL` are omitted for `route: "openai-codex"` after OAuth
+sign-in has completed in the settings page.
 
 ## Development
 
@@ -75,6 +90,7 @@ gateway_configure(apiKey, baseURL, route, displayName, defaultModel?)
 
 ```bash
 node --check lib/index.js
+node --check lib/oauth-remote.js
 node --check lib/client.js
 ```
 
