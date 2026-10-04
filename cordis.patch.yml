@@ -1,0 +1,21 @@
+# Bundle layer for gateway-config.
+#
+# 1. Mount the Host half as one Loader row. `name` is package-relative, so the
+#    profile resolves this bundle's own package directory; the Client half is
+#    declared by `dsh.client` in package.json and served as `./client`.
+#
+# 2. Let the shipped Connection row reach `webServer`. Connection's
+#    `rpc.handle()` registers its prefix route through the service's *own*
+#    context, so under the shipped composition -- whose `connection` row
+#    injects only `webRuntime` -- `ctx.connection.rpc.handle(...)` throws
+#    `cannot get property "webServer" without inject`, which fails every
+#    plugin that opens a custom RPC channel. Only `inject` is overridden
+#    below: `name` is asserted and `config` (trustedHosts) is left untouched,
+#    and a profile without a `connection` row is an ordinary patch warning.
+- insert:
+    - id: gateway-config
+      name: gateway-config
+
+- id: connection
+  name: '@deepseek-ai/dsh-client-connection'
+  inject: [webRuntime, webServer]
