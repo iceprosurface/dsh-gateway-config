@@ -43,12 +43,47 @@ with positional arguments and a flat envelope.
 | `api.credentials.describe({ refs: [ref] })` | `api.credentials.describe([ref])` |
 | `api.credentials.set({ ref, value })` | `api.credentials.set(ref, value)` |
 | `api.settings.describe({})` | `api.settings.describe()` |
-| `api.settings.mutate({ ns, ops })` | `api.settings.mutate(ns, ops)` |
+| `api.settings.mutate({ ns, ops })` | `api.settings.mutate(ns, ops, undefined)` |
 | `api.llm.discoverModels({ settingsNs, ... })` | `api.llm.discoverModels(settingsNs, { ... })` |
 | `response.result.ok / .value / .error` | `response.ok / .value / .error` |
 
+Remote methods validate their argument count exactly
+(`prepareInvocation`: `values.length` must equal `descriptor.parameters.length`,
+or that plus one declared `AbortSignal`), so the optional `expectedRevision`
+must still be passed — omitting it fails with
+`settings/mutate expected 3 argument(s), got 2`.
+
 Without this the section registers but renders nothing: `connection.api` is
 `undefined`, so the panel's `api === undefined` guard returns `null`.
+
+## Model plan: an import never drops a model it did not discover
+
+A route's `models` list **replaces** that route's built-in catalog, and for a
+catalog route that catalog is the only source of its ids. An import that wrote
+exactly the ticked ids therefore deleted two things silently: a model added by
+hand because the installed catalog has not caught up with the provider — and a
+model the gateway stopped advertising.
+
+`gpt-6.1-sol` is the concrete case. It exists in pi-ai 1.0.2 but not in the
+0.87.1 that every current DSH pins, and the Codex route cannot discover it
+either: discovery returns the installed catalog without touching the network,
+and `openai-codex-responses` is not in `LISTABLE_PROTOCOLS`
+(`anthropic-messages`, `openai-completions`, `openai-responses`), so this route
+has no `/models` to read. A gateway route (`cindy`, `sub2api`, `generic`) is not
+a catalog id, so it does hit `GET {baseURL}/models` and picks such a model up
+automatically.
+
+The panel now writes `selected + carried + typed`:
+
+| Source | Written as |
+|---|---|
+| Ticked, discovered here | full entry: id plus the discovered capabilities |
+| Present in settings, **not** discovered here | carried over verbatim, so hand-declared capabilities survive |
+| Typed in the new extra-model field | `{ id }`; api and baseURL are inherited from the route |
+
+Ids that *were* discovered but left unticked are still dropped: unticking means
+"remove". `gateway_configure` exposes the same ability as a comma-separated
+`extraModels` string.
 
 ## Upstream defect: `connection.rpc.handle()` cannot reach `webServer`
 
